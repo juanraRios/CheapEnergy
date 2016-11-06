@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">CheapEnergyTabs</string>
+    <string name="action_settings">Settings</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="no_electricity_tariff_available">Tarifa no disponible, accesibles el día antes a partir de las 20.00.</string>
+</resources>

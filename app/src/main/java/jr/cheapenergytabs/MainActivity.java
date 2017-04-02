@@ -15,10 +15,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.google.firebase.messaging.FirebaseMessaging;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
+import jr.cheapenergytabs.domain.DaoSession;
+import jr.cheapenergytabs.domain.IndicatorPVPC;
+import jr.cheapenergytabs.domain.IndicatorPVPCDao;
 import jr.cheapenergytabs.dto.IndicatorDTO;
 import jr.cheapenergytabs.dto.ResponseIndicatorDTO;
 import jr.cheapenergytabs.fragments.FirstFragment;
@@ -32,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private IndicatorDTO todayIndicatorDTO;
     private IndicatorDTO tomorrowIndicatorDTO;
     private SectionsPagerAdapter mSectionsPagerAdapter;
+    private IndicatorPVPCDao indicatorPVPCDao;
 
     /**
      * The {@link ViewPager} that will host the section contents.
@@ -39,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager mViewPager;
 
     private void loadTabs() {
+
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
@@ -56,37 +64,32 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        retrofitCall();
 
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        loadTabs();
+        IndicatorPVPC indicatorPVPC = new IndicatorPVPC();
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        indicatorPVPCDao.queryBuilder().where(IndicatorPVPCDao.Properties.DateTimeUTC.eq(new Date()));
 
-    }
-
-    @Override
-    protected void onPostResume() {
-        super.onPostResume();
         retrofitCall();
         loadTabs();
+
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-    }
+//    @Override
+//    protected void onPostResume() {
+//        super.onPostResume();
+//        retrofitCall();
+//        loadTabs();
+//    }
+
+//    @Override
+//    public void onResume() {
+//        super.onResume();
+//    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -143,8 +146,8 @@ public class MainActivity extends AppCompatActivity {
         Call<ResponseIndicatorDTO> call2 = ServiceFactory.getIndicatorService().getIndicator(formatTomorrow, formatTomorrow + "T23:00:00");
         call2.enqueue(new Callback<ResponseIndicatorDTO>() {
             @Override
-            public void onResponse(Call<ResponseIndicatorDTO> call2, Response<ResponseIndicatorDTO> response) {
-                tomorrowIndicatorDTO = response.body().getIndicator();
+            public void onResponse(Call<ResponseIndicatorDTO> call2, Response<ResponseIndicatorDTO> response2) {
+                tomorrowIndicatorDTO = response2.body().getIndicator();
 
             }
 
@@ -184,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
                 result = FirstFragment.newInstance(todayIndicatorDTO);
             }
             if (position == 2) {
-                result = FirstFragment.newInstance(tomorrowIndicatorDTO);
+                result = FirstFragment.newInstance(todayIndicatorDTO);
             }
             return result;
         }

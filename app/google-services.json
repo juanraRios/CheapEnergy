@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "289783049735",
+    "firebase_url": "https://cheapenergytabs.firebaseio.com",
+    "project_id": "cheapenergytabs",
+    "storage_bucket": "cheapenergytabs.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:289783049735:android:d4aa57911d39b615",
+        "android_client_info": {
+          "package_name": "jr.cheapenergytabs"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "289783049735-n2e7cnak79jlcedsgr71s2pes0bs912s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "jr.cheapenergytabs",
+            "certificate_hash": "8e5da33a57c650402fe3f43c6f82395754034bab"
+          }
+        },
+        {
+          "client_id": "289783049735-3sengm5fmj1o1h74nkg0bqorfve4np0r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxDGyfSCfasyeiIFgVA8_e1bmOkdUrr08"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "289783049735-3sengm5fmj1o1h74nkg0bqorfve4np0r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

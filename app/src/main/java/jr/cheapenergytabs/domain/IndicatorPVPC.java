@@ -34,6 +34,13 @@ public class IndicatorPVPC {
     @Generated(hash = 776829233)
     private transient IndicatorPVPCDao myDao;
 
+    public IndicatorPVPC(String name, Long id, Date dateTimeUTC, List<HourPricePVPC> values) {
+        this.name = name;
+        this.id = id;
+        this.dateTimeUTC = dateTimeUTC;
+        this.values = values;
+    }
+
     @Generated(hash = 1582657250)
     public IndicatorPVPC(@NotNull String name, Long id, @NotNull Date dateTimeUTC) {
         this.name = name;
@@ -82,6 +89,10 @@ public class IndicatorPVPC {
             }
         }
         return values;
+    }
+
+    public void setValues(List<HourPricePVPC> values) {
+        this.values = values;
     }
 
     /** Resets a to-many relationship, making the next get call to query for a fresh result. */

@@ -17,14 +17,23 @@ import android.view.View;
 
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import org.greenrobot.greendao.query.Query;
+import org.greenrobot.greendao.query.QueryBuilder;
+import org.greenrobot.greendao.query.WhereCondition;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import jr.cheapenergytabs.domain.DaoSession;
+import jr.cheapenergytabs.domain.HourPricePVPC;
+import jr.cheapenergytabs.domain.HourPricePVPCDao;
 import jr.cheapenergytabs.domain.IndicatorPVPC;
 import jr.cheapenergytabs.domain.IndicatorPVPCDao;
+import jr.cheapenergytabs.dto.HourPriceDTO;
 import jr.cheapenergytabs.dto.IndicatorDTO;
 import jr.cheapenergytabs.dto.ResponseIndicatorDTO;
 import jr.cheapenergytabs.fragments.FirstFragment;
@@ -33,17 +42,24 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static android.media.CamcorderProfile.get;
+
 public class MainActivity extends AppCompatActivity {
 
     private IndicatorDTO todayIndicatorDTO;
     private IndicatorDTO tomorrowIndicatorDTO;
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private IndicatorPVPCDao indicatorPVPCDao;
+    private HourPricePVPCDao hourPricePVPCDao;
+    private Query<IndicatorPVPC> indicatorQuery;
+    private Query<HourPricePVPC> hourPricePVPCQuery;
 
     /**
      * The {@link ViewPager} that will host the section contents.
      */
     private ViewPager mViewPager;
+
+    private final static String LOG = String.valueOf(MainActivity.class);
 
     private void loadTabs() {
 
@@ -54,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+        mViewPager.setOffscreenPageLimit(1);
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
@@ -70,26 +87,49 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        IndicatorPVPC indicatorPVPC = new IndicatorPVPC();
+        DaoSession daoSession = ((App) getApplication()).getDaoSession();
+        indicatorPVPCDao = daoSession.getIndicatorPVPCDao();
+        hourPricePVPCDao = daoSession.getHourPricePVPCDao();
 
-        indicatorPVPCDao.queryBuilder().where(IndicatorPVPCDao.Properties.DateTimeUTC.eq(new Date()));
+        indicatorQuery = indicatorPVPCDao.queryBuilder().orderDesc(IndicatorPVPCDao.Properties.DateTimeUTC).build();
+        hourPricePVPCQuery = hourPricePVPCDao.queryBuilder().orderDesc(HourPricePVPCDao.Properties.DateTimeUTC).build();
+        List<IndicatorPVPC> indicators = indicatorQuery.list();
+        List<HourPricePVPC> hours = hourPricePVPCQuery.list();
 
-        retrofitCall();
-        loadTabs();
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DATE),0,0,0);
+        if (indicators.isEmpty() || indicators.get(0).getDateTimeUTC().before(calendar.getTime())) {
+            retrofitCall(new Date());
+        }else{
+            QueryBuilder<IndicatorPVPC> queryBuilder = indicatorPVPCDao.queryBuilder();
+            queryBuilder.where(IndicatorPVPCDao.Properties.DateTimeUTC.eq(calendar.getTime()));
+            List<IndicatorPVPC> list = indicatorQuery.list();
+            IndicatorPVPC indicatorPVPC = list.get(0);
+            List<HourPricePVPC> hoursDomain = indicatorPVPC.getValues();
+            List<HourPriceDTO> hoursDTO = new ArrayList<HourPriceDTO>();
+
+            for (HourPricePVPC hourPricePVPC : hoursDomain){
+                HourPriceDTO hour = new HourPriceDTO();
+                hour.setValue(hourPricePVPC.getValue());
+                Calendar calendarTemp = Calendar.getInstance();
+                calendarTemp.setTime(hourPricePVPC.getDateTimeUTC());
+                hour.setDateTimeUTC(calendarTemp);
+                hoursDTO.add(hour);
+            }
+            IndicatorDTO indicatorDTO = new IndicatorDTO();
+            indicatorDTO.setValues(hoursDTO);
+            todayIndicatorDTO = indicatorDTO;
+            loadTabs();
+
+        }
+
+//        Calendar calendar2 = Calendar.getInstance();
+//        calendar2.set(Calendar.HOUR, 20);
+//        if (indicators.isEmpty() || calendar2.after(calendar)) {
+//            retrofitCall(calendar2.getTime());
+//        }
 
     }
-
-//    @Override
-//    protected void onPostResume() {
-//        super.onPostResume();
-//        retrofitCall();
-//        loadTabs();
-//    }
-
-//    @Override
-//    public void onResume() {
-//        super.onResume();
-//    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -113,29 +153,37 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void retrofitCall() {
+    private void retrofitCall(Date date) {
 
-        String formatToday;
-        String formatTomorrow;
-        Calendar today;
-        Calendar tomorrow;
+        Calendar calendar;
+        String format;
         SimpleDateFormat simpleDateFormat;
 
-        today = Calendar.getInstance();
-        tomorrow = Calendar.getInstance();
-        tomorrow.add(Calendar.DATE, 1);
-
+        calendar = Calendar.getInstance();
+        calendar.setTime(date);
         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
-        formatToday = simpleDateFormat.format(today.getTime());
-        formatTomorrow = simpleDateFormat.format(tomorrow.getTime());
+        format = simpleDateFormat.format(calendar.getTime());
 
-        Call<ResponseIndicatorDTO> call = ServiceFactory.getIndicatorService().getIndicator(formatToday + "T00:00:00", formatToday + "T23:00:00");
+        Call<ResponseIndicatorDTO> call = ServiceFactory.getIndicatorService().getIndicator(format + "T00:00:00", format + "T23:00:00");
         call.enqueue(new Callback<ResponseIndicatorDTO>() {
             @Override
             public void onResponse(Call<ResponseIndicatorDTO> call, Response<ResponseIndicatorDTO> response) {
                 todayIndicatorDTO = response.body().getIndicator();
 
+                IndicatorPVPC indicatorPVPCToday = new IndicatorPVPC();
+                indicatorPVPCToday.setDateTimeUTC(new Date());
+                indicatorPVPCToday.setName("Prueba");
+                indicatorPVPCDao.insert(indicatorPVPCToday);
+
+                for (HourPriceDTO hourPriceDTO : todayIndicatorDTO.getValues()){
+                    HourPricePVPC hour = new HourPricePVPC();
+                    hour.setIdIndicatorPVPC(indicatorPVPCToday.getId());
+                    hour.setValue(hourPriceDTO.getValue());
+                    hour.setDateTimeUTC(hourPriceDTO.getDateTimeUTC().getTime());
+                    hourPricePVPCDao.insert(hour);
+                }
+                loadTabs();
             }
 
             @Override
@@ -143,19 +191,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("onFailure", t.toString(), t);
             }
         });
-        Call<ResponseIndicatorDTO> call2 = ServiceFactory.getIndicatorService().getIndicator(formatTomorrow, formatTomorrow + "T23:00:00");
-        call2.enqueue(new Callback<ResponseIndicatorDTO>() {
-            @Override
-            public void onResponse(Call<ResponseIndicatorDTO> call2, Response<ResponseIndicatorDTO> response2) {
-                tomorrowIndicatorDTO = response2.body().getIndicator();
 
-            }
-
-            @Override
-            public void onFailure(Call<ResponseIndicatorDTO> call2, Throwable t) {
-                Log.e("onFailure", t.toString(), t);
-            }
-        });
     }
 
     @Override
@@ -168,27 +204,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
+    private class SectionsPagerAdapter extends FragmentPagerAdapter {
 
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
         @Override
-        protected Object clone() throws CloneNotSupportedException {
-            return super.clone();
-        }
-
-        @Override
         public Fragment getItem(int position) {
             Fragment result = new Fragment();
 
+            if (position == 0) {
+                //TODO: Resumen
+            }
             if (position == 1) {
                 result = FirstFragment.newInstance(todayIndicatorDTO);
             }
             if (position == 2) {
                 result = FirstFragment.newInstance(todayIndicatorDTO);
             }
+
             return result;
         }
 
@@ -207,6 +242,8 @@ public class MainActivity extends AppCompatActivity {
                     return "SECTION 2";
                 case 2:
                     return "SECTION 3";
+                case 3:
+                    return "SECTION 4";
             }
             return null;
         }

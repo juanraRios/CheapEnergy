@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion '25.0.0'
     defaultConfig {
         applicationId "jr.cheapenergytabs"
         minSdkVersion 21
@@ -37,6 +37,8 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:23.4.0'
     compile 'com.google.firebase:firebase-messaging:10.0.1'
     compile 'org.greenrobot:greendao:3.2.0'
+    // This is only needed if you want to use encrypted databases
+    compile 'net.zetetic:android-database-sqlcipher:3.5.4'
     testCompile 'junit:junit:4.12'
 }
 apply plugin: 'com.google.gms.google-services'

@@ -3,6 +3,7 @@ package jr.cheapenergytabs.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,6 +20,17 @@ public class IndicatorDTO implements Serializable {
     @JsonProperty("values")
     private List<HourPriceDTO> values;
 
+    public IndicatorDTO() {
+        this.name = "";
+        this.id = 1L;
+        this.values = new ArrayList<>();
+    }
+
+    public IndicatorDTO(IndicatorDTO indicatorDTO) {
+        this.name = indicatorDTO.getName();
+        this.id = indicatorDTO.getId();
+        this.values = indicatorDTO.getValues();
+    }
 
     public String getName() {
         return name;

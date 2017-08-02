@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.greenrobot.greendao.query.Query;
@@ -42,6 +43,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static android.R.attr.format;
+import static android.R.attr.inflatedId;
 import static android.media.CamcorderProfile.get;
 
 public class MainActivity extends AppCompatActivity {
@@ -156,16 +159,19 @@ public class MainActivity extends AppCompatActivity {
     private void retrofitCall(Date date) {
 
         Calendar calendar;
-        String format;
+        String formatToday;
+        String formatTomorrow;
         SimpleDateFormat simpleDateFormat;
 
         calendar = Calendar.getInstance();
         calendar.setTime(date);
         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
-        format = simpleDateFormat.format(calendar.getTime());
+        formatToday = simpleDateFormat.format(calendar.getTime());
+        calendar.add(Calendar.DATE,1);
+        formatTomorrow = simpleDateFormat.format(calendar.getTime());
 
-        Call<ResponseIndicatorDTO> call = ServiceFactory.getIndicatorService().getIndicator(format + "T00:00:00", format + "T23:00:00");
+        Call<ResponseIndicatorDTO> call = ServiceFactory.getIndicatorService().getIndicator(formatToday + "T00:00:00", formatTomorrow + "T23:00:00");
         call.enqueue(new Callback<ResponseIndicatorDTO>() {
             @Override
             public void onResponse(Call<ResponseIndicatorDTO> call, Response<ResponseIndicatorDTO> response) {
@@ -214,14 +220,20 @@ public class MainActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             Fragment result = new Fragment();
 
+            IndicatorDTO indicatorDTO1 = new IndicatorDTO(todayIndicatorDTO);
+            IndicatorDTO indicatorDTO2 = new IndicatorDTO(todayIndicatorDTO);
+
+            indicatorDTO1.setValues((todayIndicatorDTO.getValues().size() >= 24) ? todayIndicatorDTO.getValues().subList(0, 24) : new ArrayList<HourPriceDTO>());
+            indicatorDTO2.setValues((todayIndicatorDTO.getValues().size() >= 48) ? todayIndicatorDTO.getValues().subList(24, 48) : new ArrayList<HourPriceDTO>());
+
             if (position == 0) {
                 //TODO: Resumen
             }
             if (position == 1) {
-                result = FirstFragment.newInstance(todayIndicatorDTO);
+                result = FirstFragment.newInstance(indicatorDTO1);
             }
             if (position == 2) {
-                result = FirstFragment.newInstance(todayIndicatorDTO);
+                result = FirstFragment.newInstance(indicatorDTO2);
             }
 
             return result;

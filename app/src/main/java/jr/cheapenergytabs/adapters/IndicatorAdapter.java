@@ -11,6 +11,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 import jr.cheapenergytabs.dto.HourPriceDTO;
@@ -59,7 +60,7 @@ public class IndicatorAdapter extends RecyclerView.Adapter<IndicatorAdapter.Indi
         HourPriceDTO hourPrice;
         Double priceValue;
         DecimalFormat df;
-        Calendar dateValue;
+        Date dateValue;
 
         indicator = this.indicator;
         hourPrice = indicator.getValues().get(position);
@@ -69,7 +70,7 @@ public class IndicatorAdapter extends RecyclerView.Adapter<IndicatorAdapter.Indi
         dateValue = hourPrice.getDateTimeUTC();
 
         viewHolder.price.setText(df.format(priceValue)+" €/kWh");
-        viewHolder.date.setText(calendarToSpanishDate(dateValue));
+        viewHolder.date.setText(dateToSpanishDate(dateValue));
 
     }
 
@@ -78,12 +79,12 @@ public class IndicatorAdapter extends RecyclerView.Adapter<IndicatorAdapter.Indi
         return indicator.getValues().size();
     }
 
-    private String calendarToSpanishDate(Calendar calendar){
+    private String dateToSpanishDate(Date date){
         String result;
         SimpleDateFormat formatter;
 
         formatter = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        result = formatter.format(calendar.getTime());
+        result = formatter.format(date);
 
         return result;
     }

@@ -32,13 +32,6 @@ public class HourPricePVPC {
 
     private transient HourPricePVPCDao myDao;
 
-    public HourPricePVPC(Long id, @NotNull Double value,
-                         @NotNull Date dateTimeUTC) {
-        this.id = id;
-        this.value = value;
-        this.dateTimeUTC = dateTimeUTC;
-    }
-
     @Generated(hash = 1091432998)
     public HourPricePVPC() {
     }

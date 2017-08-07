@@ -1,8 +1,6 @@
 package jr.cheapenergytabs;
 
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -13,15 +11,11 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-
-import com.fasterxml.jackson.databind.util.BeanUtil;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.greenrobot.greendao.query.Query;
 import org.greenrobot.greendao.query.QueryBuilder;
-import org.greenrobot.greendao.query.WhereCondition;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -29,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import jr.cheapenergytabs.converters.HourPricePVPCToHourPriceDTOConverter;
 import jr.cheapenergytabs.domain.DaoSession;
 import jr.cheapenergytabs.domain.HourPricePVPC;
 import jr.cheapenergytabs.domain.HourPricePVPCDao;
@@ -38,24 +33,23 @@ import jr.cheapenergytabs.dto.HourPriceDTO;
 import jr.cheapenergytabs.dto.IndicatorDTO;
 import jr.cheapenergytabs.dto.ResponseIndicatorDTO;
 import jr.cheapenergytabs.fragments.FirstFragment;
+import jr.cheapenergytabs.fragments.SummaryFragment;
 import jr.cheapenergytabs.services.ServiceFactory;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import static android.R.attr.format;
-import static android.R.attr.inflatedId;
-import static android.media.CamcorderProfile.get;
-
 public class MainActivity extends AppCompatActivity {
 
+    private IndicatorDTO indicatorDTO;
     private IndicatorDTO todayIndicatorDTO;
     private IndicatorDTO tomorrowIndicatorDTO;
+
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private IndicatorPVPCDao indicatorPVPCDao;
     private HourPricePVPCDao hourPricePVPCDao;
-    private Query<IndicatorPVPC> indicatorQuery;
-    private Query<HourPricePVPC> hourPricePVPCQuery;
+
+    private Query<IndicatorPVPC> todayIndicatorQuery;
 
     /**
      * The {@link ViewPager} that will host the section contents.
@@ -94,44 +88,56 @@ public class MainActivity extends AppCompatActivity {
         indicatorPVPCDao = daoSession.getIndicatorPVPCDao();
         hourPricePVPCDao = daoSession.getHourPricePVPCDao();
 
-        indicatorQuery = indicatorPVPCDao.queryBuilder().orderDesc(IndicatorPVPCDao.Properties.DateTimeUTC).build();
-        hourPricePVPCQuery = hourPricePVPCDao.queryBuilder().orderDesc(HourPricePVPCDao.Properties.DateTimeUTC).build();
-        List<IndicatorPVPC> indicators = indicatorQuery.list();
-        List<HourPricePVPC> hours = hourPricePVPCQuery.list();
+        Calendar todayCalendar = Calendar.getInstance();
+        todayCalendar.set(todayCalendar.get(Calendar.YEAR), todayCalendar.get(Calendar.MONTH), todayCalendar.get(Calendar.DATE), 0, 0, 0);
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DATE),0,0,0);
-        if (indicators.isEmpty() || indicators.get(0).getDateTimeUTC().before(calendar.getTime())) {
+        Calendar tomorrowConsultHourCalendar = Calendar.getInstance();
+        tomorrowConsultHourCalendar.set(tomorrowConsultHourCalendar.get(Calendar.YEAR), tomorrowConsultHourCalendar.get(Calendar.MONTH), tomorrowConsultHourCalendar.get(Calendar.DATE), 20, 15, 0);
+
+        todayIndicatorQuery = indicatorPVPCDao.queryBuilder().whereOr(IndicatorPVPCDao.Properties.DateTimeUTC.eq(todayCalendar.getTime()), IndicatorPVPCDao.Properties.DateTimeUTC.gt(todayCalendar.getTime())).build();
+
+        List<IndicatorPVPC> todayIndicator = todayIndicatorQuery.list();
+
+        if (todayIndicator.get(0).getValues().isEmpty() && (todayIndicator.get(0).getValues().size() < 48 && new Date().after(tomorrowConsultHourCalendar.getTime()))) {
             retrofitCall(new Date());
-        }else{
+
+            List<HourPriceDTO> todayIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 24) ? indicatorDTO.getValues().subList(0, 24) : new ArrayList<HourPriceDTO>());
+            todayIndicatorDTO.setValues(todayIndicatorDTOValues);
+
+            tomorrowIndicatorDTO = new IndicatorDTO();
+            List<HourPriceDTO> tomorrowIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 48) ? indicatorDTO.getValues().subList(24, 48) : new ArrayList<HourPriceDTO>());
+            tomorrowIndicatorDTO.setValues(tomorrowIndicatorDTOValues);
+
+        } else {
+            todayIndicatorDTO = new IndicatorDTO();
             QueryBuilder<IndicatorPVPC> queryBuilder = indicatorPVPCDao.queryBuilder();
-            queryBuilder.where(IndicatorPVPCDao.Properties.DateTimeUTC.eq(calendar.getTime()));
-            List<IndicatorPVPC> list = indicatorQuery.list();
+            queryBuilder.where(IndicatorPVPCDao.Properties.DateTimeUTC.eq(todayCalendar.getTime()));
+            List<IndicatorPVPC> list = todayIndicatorQuery.list();
             IndicatorPVPC indicatorPVPC = list.get(0);
             List<HourPricePVPC> hoursDomain = indicatorPVPC.getValues();
-            List<HourPriceDTO> hoursDTO = new ArrayList<HourPriceDTO>();
 
-            for (HourPricePVPC hourPricePVPC : hoursDomain){
-                HourPriceDTO hour = new HourPriceDTO();
-                hour.setValue(hourPricePVPC.getValue());
-                Calendar calendarTemp = Calendar.getInstance();
-                calendarTemp.setTime(hourPricePVPC.getDateTimeUTC());
-                hour.setDateTimeUTC(calendarTemp);
-                hoursDTO.add(hour);
+//          Converter HourPricePVPC to HourPriceDTO
+            HourPricePVPCToHourPriceDTOConverter hourPricePVPCToHourPriceDTOConverter = new HourPricePVPCToHourPriceDTOConverter();
+            List<HourPriceDTO> hoursDTO = new ArrayList<>();
+            for (HourPricePVPC hourPricePVPC : hoursDomain) {
+                HourPriceDTO hourPriceDTO = new HourPriceDTO();
+                try {
+                    hourPriceDTO = hourPricePVPCToHourPriceDTOConverter.convert(hourPricePVPC);
+                } catch (IOException e) {
+                    Log.e(LOG, "Error when execute converter hourPricePVPCToHourPriceDTOConverter", e);
+                }
+                hoursDTO.add(hourPriceDTO);
             }
-            IndicatorDTO indicatorDTO = new IndicatorDTO();
-            indicatorDTO.setValues(hoursDTO);
-            todayIndicatorDTO = indicatorDTO;
-            loadTabs();
+
+            List<HourPriceDTO> todayIndicatorDTOValues = new ArrayList<>((hoursDTO.size() >= 24) ? hoursDTO.subList(0, 24) : new ArrayList<HourPriceDTO>());
+            todayIndicatorDTO.setValues(todayIndicatorDTOValues);
+
+            tomorrowIndicatorDTO = new IndicatorDTO();
+            List<HourPriceDTO> tomorrowIndicatorDTOValues = new ArrayList<>((hoursDTO.size() >= 48) ? hoursDTO.subList(24, 48) : new ArrayList<HourPriceDTO>());
+            tomorrowIndicatorDTO.setValues(tomorrowIndicatorDTOValues);
 
         }
-
-//        Calendar calendar2 = Calendar.getInstance();
-//        calendar2.set(Calendar.HOUR, 20);
-//        if (indicators.isEmpty() || calendar2.after(calendar)) {
-//            retrofitCall(calendar2.getTime());
-//        }
-
+        loadTabs();
     }
 
     @Override
@@ -168,28 +174,28 @@ public class MainActivity extends AppCompatActivity {
         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
         formatToday = simpleDateFormat.format(calendar.getTime());
-        calendar.add(Calendar.DATE,1);
+        calendar.add(Calendar.DATE, 1);
         formatTomorrow = simpleDateFormat.format(calendar.getTime());
 
         Call<ResponseIndicatorDTO> call = ServiceFactory.getIndicatorService().getIndicator(formatToday + "T00:00:00", formatTomorrow + "T23:00:00");
         call.enqueue(new Callback<ResponseIndicatorDTO>() {
             @Override
             public void onResponse(Call<ResponseIndicatorDTO> call, Response<ResponseIndicatorDTO> response) {
-                todayIndicatorDTO = response.body().getIndicator();
+                indicatorDTO = response.body().getIndicator();
 
                 IndicatorPVPC indicatorPVPCToday = new IndicatorPVPC();
                 indicatorPVPCToday.setDateTimeUTC(new Date());
                 indicatorPVPCToday.setName("Prueba");
                 indicatorPVPCDao.insert(indicatorPVPCToday);
 
-                for (HourPriceDTO hourPriceDTO : todayIndicatorDTO.getValues()){
+                for (HourPriceDTO hourPriceDTO : indicatorDTO.getValues()) {
                     HourPricePVPC hour = new HourPricePVPC();
                     hour.setIdIndicatorPVPC(indicatorPVPCToday.getId());
                     hour.setValue(hourPriceDTO.getValue());
-                    hour.setDateTimeUTC(hourPriceDTO.getDateTimeUTC().getTime());
+                    hour.setDateTimeUTC(hourPriceDTO.getDateTimeUTC());
                     hourPricePVPCDao.insert(hour);
                 }
-                loadTabs();
+//                loadTabs();
             }
 
             @Override
@@ -220,20 +226,14 @@ public class MainActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             Fragment result = new Fragment();
 
-            IndicatorDTO indicatorDTO1 = new IndicatorDTO(todayIndicatorDTO);
-            IndicatorDTO indicatorDTO2 = new IndicatorDTO(todayIndicatorDTO);
-
-            indicatorDTO1.setValues((todayIndicatorDTO.getValues().size() >= 24) ? todayIndicatorDTO.getValues().subList(0, 24) : new ArrayList<HourPriceDTO>());
-            indicatorDTO2.setValues((todayIndicatorDTO.getValues().size() >= 48) ? todayIndicatorDTO.getValues().subList(24, 48) : new ArrayList<HourPriceDTO>());
-
             if (position == 0) {
-                //TODO: Resumen
+                result = SummaryFragment.newInstance(todayIndicatorDTO);
             }
             if (position == 1) {
-                result = FirstFragment.newInstance(indicatorDTO1);
+                result = FirstFragment.newInstance(todayIndicatorDTO);
             }
             if (position == 2) {
-                result = FirstFragment.newInstance(indicatorDTO2);
+                result = FirstFragment.newInstance(tomorrowIndicatorDTO);
             }
 
             return result;

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by juanra on 04/06/16.
@@ -14,7 +15,7 @@ public class HourPriceDTO implements Serializable {
     private Double value;
 
     @JsonProperty("datetime_utc")
-    private Calendar dateTimeUTC;
+    private Date dateTimeUTC;
 
     public Double getValue() {
         return value;
@@ -24,11 +25,11 @@ public class HourPriceDTO implements Serializable {
         this.value = value;
     }
 
-    public Calendar getDateTimeUTC() {
+    public Date getDateTimeUTC() {
         return dateTimeUTC;
     }
 
-    public void setDateTimeUTC(Calendar dateTimeUTC) {
+    public void setDateTimeUTC(Date dateTimeUTC) {
         this.dateTimeUTC = dateTimeUTC;
     }
 

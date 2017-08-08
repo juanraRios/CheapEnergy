@@ -40,7 +40,7 @@ public class FirstFragment extends Fragment {
         RecyclerView.Adapter adapter;
         RecyclerView.LayoutManager layoutManager;
 
-        if (indicatorDTO!=null && !indicatorDTO.getValues().isEmpty()){
+        if (!indicatorDTO.getValues().isEmpty()){
             layoutManager = new LinearLayoutManager(getContext());
             RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
             recyclerView.setHasFixedSize(true);

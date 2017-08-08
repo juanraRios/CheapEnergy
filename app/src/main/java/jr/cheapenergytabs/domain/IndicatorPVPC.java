@@ -24,6 +24,7 @@ public class IndicatorPVPC {
     private Date dateTimeUTC;
 
     @ToMany(referencedJoinProperty = "idIndicatorPVPC")
+    @NotNull
     private List<HourPricePVPC> values;
 
     /** Used to resolve relations */

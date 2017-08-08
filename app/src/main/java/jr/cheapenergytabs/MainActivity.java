@@ -77,6 +77,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        indicatorDTO = new IndicatorDTO();
+        indicatorDTO.setValues(new ArrayList<HourPriceDTO>());
+        todayIndicatorDTO = new IndicatorDTO();
+        todayIndicatorDTO.setValues(new ArrayList<HourPriceDTO>());
+        tomorrowIndicatorDTO = new IndicatorDTO();
+        tomorrowIndicatorDTO.setValues(new ArrayList<HourPriceDTO>());
+
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
@@ -96,20 +103,18 @@ public class MainActivity extends AppCompatActivity {
 
         todayIndicatorQuery = indicatorPVPCDao.queryBuilder().whereOr(IndicatorPVPCDao.Properties.DateTimeUTC.eq(todayCalendar.getTime()), IndicatorPVPCDao.Properties.DateTimeUTC.gt(todayCalendar.getTime())).build();
 
-        List<IndicatorPVPC> todayIndicator = todayIndicatorQuery.list();
+        List<IndicatorPVPC> todayIndicatorList = todayIndicatorQuery.list();
 
-        if (todayIndicator.get(0).getValues().isEmpty() && (todayIndicator.get(0).getValues().size() < 48 && new Date().after(tomorrowConsultHourCalendar.getTime()))) {
+        if (todayIndicatorList.isEmpty() || todayIndicatorList.get(0).getValues().isEmpty() || (todayIndicatorList.get(0).getValues().size() < 48 && new Date().after(tomorrowConsultHourCalendar.getTime()))) {
             retrofitCall(new Date());
 
-            List<HourPriceDTO> todayIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 24) ? indicatorDTO.getValues().subList(0, 24) : new ArrayList<HourPriceDTO>());
-            todayIndicatorDTO.setValues(todayIndicatorDTOValues);
-
-            tomorrowIndicatorDTO = new IndicatorDTO();
-            List<HourPriceDTO> tomorrowIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 48) ? indicatorDTO.getValues().subList(24, 48) : new ArrayList<HourPriceDTO>());
-            tomorrowIndicatorDTO.setValues(tomorrowIndicatorDTOValues);
+//            List<HourPriceDTO> todayIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 24) ? indicatorDTO.getValues().subList(0, 24) : new ArrayList<HourPriceDTO>());
+//            todayIndicatorDTO.setValues(todayIndicatorDTOValues);
+//
+//            List<HourPriceDTO> tomorrowIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 48) ? indicatorDTO.getValues().subList(24, 48) : new ArrayList<HourPriceDTO>());
+//            tomorrowIndicatorDTO.setValues(tomorrowIndicatorDTOValues);
 
         } else {
-            todayIndicatorDTO = new IndicatorDTO();
             QueryBuilder<IndicatorPVPC> queryBuilder = indicatorPVPCDao.queryBuilder();
             queryBuilder.where(IndicatorPVPCDao.Properties.DateTimeUTC.eq(todayCalendar.getTime()));
             List<IndicatorPVPC> list = todayIndicatorQuery.list();
@@ -127,17 +132,14 @@ public class MainActivity extends AppCompatActivity {
                     Log.e(LOG, "Error when execute converter hourPricePVPCToHourPriceDTOConverter", e);
                 }
                 hoursDTO.add(hourPriceDTO);
+                List<HourPriceDTO> todayIndicatorDTOValues = new ArrayList<>((hoursDTO.size() >= 24) ? hoursDTO.subList(0, 24) : new ArrayList<HourPriceDTO>());
+                todayIndicatorDTO.setValues(todayIndicatorDTOValues);
+
+                List<HourPriceDTO> tomorrowIndicatorDTOValues = new ArrayList<>((hoursDTO.size() >= 48) ? hoursDTO.subList(24, 48) : new ArrayList<HourPriceDTO>());
+                tomorrowIndicatorDTO.setValues(tomorrowIndicatorDTOValues);
             }
-
-            List<HourPriceDTO> todayIndicatorDTOValues = new ArrayList<>((hoursDTO.size() >= 24) ? hoursDTO.subList(0, 24) : new ArrayList<HourPriceDTO>());
-            todayIndicatorDTO.setValues(todayIndicatorDTOValues);
-
-            tomorrowIndicatorDTO = new IndicatorDTO();
-            List<HourPriceDTO> tomorrowIndicatorDTOValues = new ArrayList<>((hoursDTO.size() >= 48) ? hoursDTO.subList(24, 48) : new ArrayList<HourPriceDTO>());
-            tomorrowIndicatorDTO.setValues(tomorrowIndicatorDTOValues);
-
+            loadTabs();
         }
-        loadTabs();
     }
 
     @Override
@@ -195,7 +197,12 @@ public class MainActivity extends AppCompatActivity {
                     hour.setDateTimeUTC(hourPriceDTO.getDateTimeUTC());
                     hourPricePVPCDao.insert(hour);
                 }
-//                loadTabs();
+                List<HourPriceDTO> todayIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 24) ? indicatorDTO.getValues().subList(0, 24) : new ArrayList<HourPriceDTO>());
+                todayIndicatorDTO.getValues().addAll(todayIndicatorDTOValues);
+
+                List<HourPriceDTO> tomorrowIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 48) ? indicatorDTO.getValues().subList(24, 48) : new ArrayList<HourPriceDTO>());
+                tomorrowIndicatorDTO.setValues(tomorrowIndicatorDTOValues);
+                loadTabs();
             }
 
             @Override

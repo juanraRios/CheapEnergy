@@ -105,14 +105,9 @@ public class MainActivity extends AppCompatActivity {
 
         List<IndicatorPVPC> todayIndicatorList = todayIndicatorQuery.list();
 
+        //Bug don't save hourPrice tomorrow
         if (todayIndicatorList.isEmpty() || todayIndicatorList.get(0).getValues().isEmpty() || (todayIndicatorList.get(0).getValues().size() < 48 && new Date().after(tomorrowConsultHourCalendar.getTime()))) {
             retrofitCall(new Date());
-
-//            List<HourPriceDTO> todayIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 24) ? indicatorDTO.getValues().subList(0, 24) : new ArrayList<HourPriceDTO>());
-//            todayIndicatorDTO.setValues(todayIndicatorDTOValues);
-//
-//            List<HourPriceDTO> tomorrowIndicatorDTOValues = new ArrayList<>((indicatorDTO.getValues().size() >= 48) ? indicatorDTO.getValues().subList(24, 48) : new ArrayList<HourPriceDTO>());
-//            tomorrowIndicatorDTO.setValues(tomorrowIndicatorDTOValues);
 
         } else {
             QueryBuilder<IndicatorPVPC> queryBuilder = indicatorPVPCDao.queryBuilder();
@@ -121,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
             IndicatorPVPC indicatorPVPC = list.get(0);
             List<HourPricePVPC> hoursDomain = indicatorPVPC.getValues();
 
-//          Converter HourPricePVPC to HourPriceDTO
             HourPricePVPCToHourPriceDTOConverter hourPricePVPCToHourPriceDTOConverter = new HourPricePVPCToHourPriceDTOConverter();
             List<HourPriceDTO> hoursDTO = new ArrayList<>();
             for (HourPricePVPC hourPricePVPC : hoursDomain) {

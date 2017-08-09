@@ -1,15 +1,21 @@
 package jr.cheapenergytabs.dto;
 
+import android.support.annotation.NonNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.Calendar;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.Date;
+
+import jr.cheapenergytabs.converters.HourPriceValueToPrintHourPriceValue;
 
 /**
  * Created by juanra on 04/06/16.
  */
-public class HourPriceDTO implements Serializable {
+public class HourPriceDTO implements Serializable, Comparable<HourPriceDTO> {
 
     @JsonProperty("value")
     private Double value;
@@ -33,4 +39,16 @@ public class HourPriceDTO implements Serializable {
         this.dateTimeUTC = dateTimeUTC;
     }
 
+    @Override
+    public int compareTo(@NonNull HourPriceDTO hourPriceDTO) {
+        return this.getValue().compareTo(hourPriceDTO.getValue());
+    }
+
+    public String valuePrint() {
+        Double priceValue = getValue() / 1000;
+        DecimalFormat df = new DecimalFormat("0.00000");
+        df.setRoundingMode(RoundingMode.CEILING);
+
+        return df.format(priceValue) + " €/kWh";
+    }
 }

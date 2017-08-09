@@ -3,6 +3,9 @@ package jr.cheapenergytabs.services;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -15,11 +18,17 @@ public class ServiceFactory {
     private static final String BASE_URL = "https://api.esios.ree.es";
     private static Retrofit retrofitService;
 
-    public static Retrofit getRetrofit(){
-        if (retrofitService==null){
+    public static Retrofit getRetrofit() {
+        if (retrofitService == null) {
+            final OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .build();
+
             retrofitService = new Retrofit.Builder()
                     .baseUrl(BASE_URL)
                     .addConverterFactory(getConverterFactory())
+                    .client(okHttpClient)
                     .build();
         }
         return retrofitService;
@@ -34,10 +43,10 @@ public class ServiceFactory {
         return JacksonConverterFactory.create(objMapper);
     }
 
-    public static IndicatorService getIndicatorService(){
-        if(indicatorService==null){
+    public static IndicatorService getIndicatorService() {
+        if (indicatorService == null) {
 
-            indicatorService=getRetrofit().create(IndicatorService.class);
+            indicatorService = getRetrofit().create(IndicatorService.class);
 
         }
         return indicatorService;

@@ -101,19 +101,17 @@ public class MainActivity extends AppCompatActivity {
         Calendar tomorrowConsultHourCalendar = Calendar.getInstance();
         tomorrowConsultHourCalendar.set(tomorrowConsultHourCalendar.get(Calendar.YEAR), tomorrowConsultHourCalendar.get(Calendar.MONTH), tomorrowConsultHourCalendar.get(Calendar.DATE), 20, 15, 0);
 
-        todayIndicatorQuery = indicatorPVPCDao.queryBuilder().whereOr(IndicatorPVPCDao.Properties.DateTimeUTC.eq(todayCalendar.getTime()), IndicatorPVPCDao.Properties.DateTimeUTC.gt(todayCalendar.getTime())).build();
-
+        todayIndicatorQuery = indicatorPVPCDao.queryBuilder().where(IndicatorPVPCDao.Properties.DateTimeUTC.gt(todayCalendar.getTime())).build();
         List<IndicatorPVPC> todayIndicatorList = todayIndicatorQuery.list();
 
-        //Bug don't save hourPrice tomorrow
-        if (todayIndicatorList.isEmpty() || todayIndicatorList.get(0).getValues().isEmpty() || (todayIndicatorList.get(0).getValues().size() < 48 && new Date().after(tomorrowConsultHourCalendar.getTime()))) {
+        if (todayIndicatorList.isEmpty() || todayIndicatorList.get(todayIndicatorList.size()-1).getValues().isEmpty() || (todayIndicatorList.get(todayIndicatorList.size()-1).getValues().size() < 48 && new Date().after(tomorrowConsultHourCalendar.getTime()))) {
             retrofitCall(new Date());
 
         } else {
             QueryBuilder<IndicatorPVPC> queryBuilder = indicatorPVPCDao.queryBuilder();
             queryBuilder.where(IndicatorPVPCDao.Properties.DateTimeUTC.eq(todayCalendar.getTime()));
             List<IndicatorPVPC> list = todayIndicatorQuery.list();
-            IndicatorPVPC indicatorPVPC = list.get(0);
+            IndicatorPVPC indicatorPVPC = list.get(todayIndicatorList.size()-1);
             List<HourPricePVPC> hoursDomain = indicatorPVPC.getValues();
 
             HourPricePVPCToHourPriceDTOConverter hourPricePVPCToHourPriceDTOConverter = new HourPricePVPCToHourPriceDTOConverter();

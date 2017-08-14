@@ -13,9 +13,11 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import jr.cheapenergytabs.R;
+import jr.cheapenergytabs.converters.DateToSpanishDateConverter;
 import jr.cheapenergytabs.converters.HourPriceValueToPrintHourPriceValue;
 import jr.cheapenergytabs.dto.HourPriceDTO;
 import jr.cheapenergytabs.dto.IndicatorDTO;
@@ -43,7 +45,7 @@ public class SummaryFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         indicatorDTO = (IndicatorDTO) getArguments().getSerializable("indicatorDTO");
-        View rootView = inflater.inflate(R.layout.sumary_fragment, container, false);
+        View rootView = inflater.inflate(R.layout.summary_fragment, container, false);
 
         ArrayList<HourPriceDTO> hourPriceDTOOrderedList = new ArrayList<>(indicatorDTO.getValues());
         Collections.sort(hourPriceDTOOrderedList);
@@ -59,17 +61,20 @@ public class SummaryFragment extends Fragment {
             Integer currentHour = now.get(Calendar.HOUR_OF_DAY);
 
             if (hour.equals(currentHour)) {
-                currentContentTextView.setText(hourPriceDTO.valuePrint());
+                String currentTimeText = dateToSpanishConvert(hourPriceDTO.getDateTimeUTC());
+                currentContentTextView.setText(currentTimeText.concat(" | ").concat(hourPriceDTO.valuePrint()));
             }
         }
 
         TextView textView = (TextView) rootView.findViewById(R.id.bestContentTextView);
         HourPriceDTO minHourPriceDTO = hourPriceDTOOrderedList.get(0);
-        textView.setText(minHourPriceDTO.valuePrint());
+        String minTimeText = dateToSpanishConvert(minHourPriceDTO.getDateTimeUTC());
+        textView.setText(minTimeText.concat(" | ").concat(minHourPriceDTO.valuePrint()));
 
         TextView worstContentTextView = (TextView) rootView.findViewById(R.id.worstContentTextView);
         HourPriceDTO maxHourPriceDTO = hourPriceDTOOrderedList.get(hourPriceDTOOrderedList.size() - 1);
-        worstContentTextView.setText(maxHourPriceDTO.valuePrint());
+        String maxTimeText = dateToSpanishConvert(maxHourPriceDTO.getDateTimeUTC());
+        worstContentTextView.setText(maxTimeText.concat(" | ").concat(maxHourPriceDTO.valuePrint()));
 
         TextView avgContentTextView = (TextView) rootView.findViewById(R.id.avgContentTextView);
         HourPriceValueToPrintHourPriceValue converter = new HourPriceValueToPrintHourPriceValue();
@@ -85,6 +90,16 @@ public class SummaryFragment extends Fragment {
         maxContentTextView.setText(df.format(percentMaxDifference).concat("%"));
 
         return rootView;
+    }
+
+    private String dateToSpanishConvert(Date date) {
+        String result = "";
+        try {
+            result = new DateToSpanishDateConverter().convert(date);
+        } catch (IOException e) {
+            Log.e(LOG, "Error when execute converter DateToSpanishDateConverter", e);
+        }
+        return result;
     }
 
     private Double calculateAverage(List<HourPriceDTO> hourPriceDtoList) {

@@ -52,6 +52,7 @@ public class SummaryFragment extends Fragment {
         DecimalFormat df = new DecimalFormat("##.##");
 
         TextView currentContentTextView = (TextView) rootView.findViewById(R.id.currentContentTextView);
+        TextView currentContentTextView2 = (TextView) rootView.findViewById(R.id.currentContentTextView2);
         for (HourPriceDTO hourPriceDTO : indicatorDTO.getValues()) {
             Calendar hourPrice = Calendar.getInstance();
             hourPrice.setTime(hourPriceDTO.getDateTimeUTC());
@@ -62,19 +63,24 @@ public class SummaryFragment extends Fragment {
 
             if (hour.equals(currentHour)) {
                 String currentTimeText = dateToSpanishConvert(hourPriceDTO.getDateTimeUTC());
-                currentContentTextView.setText(currentTimeText.concat(" | ").concat(hourPriceDTO.valuePrint()));
+                currentContentTextView.setText(currentTimeText);
+                currentContentTextView2.setText(hourPriceDTO.valuePrint());
             }
         }
 
-        TextView textView = (TextView) rootView.findViewById(R.id.bestContentTextView);
+        TextView bestContentTextView = (TextView) rootView.findViewById(R.id.bestContentTextView);
+        TextView bestContentTextView2 = (TextView) rootView.findViewById(R.id.bestContentTextView2);
         HourPriceDTO minHourPriceDTO = hourPriceDTOOrderedList.get(0);
         String minTimeText = dateToSpanishConvert(minHourPriceDTO.getDateTimeUTC());
-        textView.setText(minTimeText.concat(" | ").concat(minHourPriceDTO.valuePrint()));
+        bestContentTextView.setText(minTimeText);
+        bestContentTextView2.setText(minHourPriceDTO.valuePrint());
 
         TextView worstContentTextView = (TextView) rootView.findViewById(R.id.worstContentTextView);
+        TextView worstContentTextView2 = (TextView) rootView.findViewById(R.id.worstContentTextView2);
         HourPriceDTO maxHourPriceDTO = hourPriceDTOOrderedList.get(hourPriceDTOOrderedList.size() - 1);
         String maxTimeText = dateToSpanishConvert(maxHourPriceDTO.getDateTimeUTC());
-        worstContentTextView.setText(maxTimeText.concat(" | ").concat(maxHourPriceDTO.valuePrint()));
+        worstContentTextView.setText(maxTimeText);
+        worstContentTextView2.setText(maxHourPriceDTO.valuePrint());
 
         TextView avgContentTextView = (TextView) rootView.findViewById(R.id.avgContentTextView);
         HourPriceValueToPrintHourPriceValue converter = new HourPriceValueToPrintHourPriceValue();

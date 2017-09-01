@@ -1,15 +1,14 @@
 package jr.cheapenergytabs.domain;
 
+import org.greenrobot.greendao.DaoException;
 import org.greenrobot.greendao.annotation.Entity;
+import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
-import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.annotation.ToMany;
 
 import java.util.Date;
 import java.util.List;
-import org.greenrobot.greendao.annotation.Generated;
-import org.greenrobot.greendao.DaoException;
 
 @Entity
 public class IndicatorPVPC {
@@ -27,11 +26,15 @@ public class IndicatorPVPC {
     @NotNull
     private List<HourPricePVPC> values;
 
-    /** Used to resolve relations */
+    /**
+     * Used to resolve relations
+     */
     @Generated(hash = 2040040024)
     private transient DaoSession daoSession;
 
-    /** Used for active entity operations. */
+    /**
+     * Used for active entity operations.
+     */
     @Generated(hash = 776829233)
     private transient IndicatorPVPCDao myDao;
 
@@ -96,7 +99,9 @@ public class IndicatorPVPC {
         this.values = values;
     }
 
-    /** Resets a to-many relationship, making the next get call to query for a fresh result. */
+    /**
+     * Resets a to-many relationship, making the next get call to query for a fresh result.
+     */
     @Generated(hash = 51507580)
     public synchronized void resetValues() {
         values = null;
@@ -152,5 +157,5 @@ public class IndicatorPVPC {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getIndicatorPVPCDao() : null;
     }
-    
+
 }
